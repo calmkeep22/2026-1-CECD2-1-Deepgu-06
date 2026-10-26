@@ -1,0 +1,5 @@
+Deepgu backend database migrations.
+
+Run Alembic commands from the BE directory. See the root README.md for the
+new-database and existing-database workflows. Every file under versions/ is
+part of the schema history and must be committed with the related model change.
