@@ -167,12 +167,48 @@ cp .env.example .env
 
 # 로컬 실행
 pip install -r requirements.txt
+alembic upgrade head
 python -m uvicorn app.main:app --reload
 
 # Docker 실행
 docker build -t deepgu-be .
+docker run --rm --env-file .env deepgu-be alembic upgrade head
 docker run -p 8000:8000 --env-file .env deepgu-be
 ```
+
+#### DB 마이그레이션
+
+DB 스키마는 애플리케이션 시작 시 자동 생성하지 않고 Alembic으로 관리합니다. 명령은 `BE` 디렉토리에서 실행합니다.
+
+신규 DB는 빈 데이터베이스를 만든 뒤 baseline부터 최신 revision까지 적용합니다.
+
+```bash
+cd BE
+alembic upgrade head
+alembic current
+```
+
+이미 운영 중인 기존 DB는 먼저 백업하고, 실제 테이블·컬럼·인덱스·제약조건이 baseline과 동일한지 확인한 경우에만 baseline revision을 등록합니다.
+
+```bash
+cd BE
+alembic stamp 20261026_0001
+alembic current
+alembic upgrade head
+```
+
+`stamp`는 SQL을 실행하지 않습니다. 실제 스키마가 baseline과 다른 상태에서 실행하면 Alembic 기록과 DB가 불일치하므로 `stamp head`를 임의로 사용하지 마세요.
+
+향후 ORM 모델 변경은 다음 순서로 반영합니다.
+
+```bash
+alembic revision --autogenerate -m "describe schema change"
+# 생성된 versions/*.py의 upgrade/downgrade를 직접 검토
+alembic upgrade head
+alembic check
+```
+
+컬럼명 변경이 `DROP COLUMN` + `ADD COLUMN`으로 생성되거나, 기존 데이터가 있는 테이블에 `NOT NULL` 컬럼이 바로 추가될 수 있으므로 autogenerate 결과를 그대로 적용하면 안 됩니다. 데이터 삭제가 포함된 downgrade는 백업 없이 운영 DB에서 실행하지 마세요.
 
 ### AI 파이프라인
 
