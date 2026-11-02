@@ -1,18 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
-from app.models.camera_assignment import CameraAssignment
+from app.core.exceptions import AppException
 from app.models.user import User
 from app.schemas.common import ApiResponse
 from app.schemas.stream import (
     StreamControlResponse,
     StreamSessionItem,
-    StreamStartRequest,
     StreamStatusResponse,
 )
-from app.services.camera_service import CameraService
+from app.services.camera_access_policy import CameraAccessPolicy
 from app.services.stream_service import StreamService
 
 router = APIRouter(prefix="/api/cameras", tags=["streams"])
@@ -20,18 +19,15 @@ router = APIRouter(prefix="/api/cameras", tags=["streams"])
 
 def _check_camera_access(camera_id: str, current_user: User, db: Session) -> None:
     """관리자가 아닌 경우 할당된 카메라인지 확인한다."""
-    if current_user.role == "ADMIN":
+    access_policy = CameraAccessPolicy(db, current_user)
+    if access_policy.allows_all:
         return
-    camera = CameraService.get_camera_by_camera_id(db, camera_id)
+
+    camera = access_policy.get_camera(camera_id)
     if not camera:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CAMERA_NOT_FOUND")
-    assignment = (
-        db.query(CameraAssignment)
-        .filter(CameraAssignment.user_id == current_user.id, CameraAssignment.camera_id == camera.id)
-        .first()
-    )
-    if not assignment:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="ACCESS_DENIED")
+        raise AppException(status_code=404, code="CAMERA_NOT_FOUND", message="카메라를 찾을 수 없습니다.")
+    if not access_policy.can_access(camera):
+        raise AppException(status_code=403, code="ACCESS_DENIED", message="접근 권한이 없습니다.")
 
 
 @router.post(
@@ -41,7 +37,6 @@ def _check_camera_access(camera_id: str, current_user: User, db: Session) -> Non
 )
 async def start_stream(
     camera_id: str,
-    request: StreamStartRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

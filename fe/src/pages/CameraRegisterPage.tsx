@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "../api/client";
 import { createCamera } from "../api/camera";
 import Layout from "../components/Layout";
 
@@ -42,7 +43,7 @@ const CameraRegisterPage = () => {
       });
       navigate("/cameras");
     } catch (err: any) {
-      setError(err.response?.data?.detail || "카메라 등록에 실패했습니다.");
+      setError(getApiErrorMessage(err, "카메라 등록에 실패했습니다."));
       setStep(0);
     } finally {
       setLoading(false);

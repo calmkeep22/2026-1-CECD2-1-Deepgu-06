@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "../api/client";
 import { getCameras, deleteCamera } from "../api/camera";
 import type { Camera } from "../api/camera";
 import Layout from "../components/Layout";
@@ -34,7 +35,7 @@ const CamerasPage = () => {
       await deleteCamera(cam.cameraId);
       load();
     } catch (err: any) {
-      alert(err.response?.data?.detail || "삭제 실패");
+      alert(getApiErrorMessage(err, "삭제 실패"));
     } finally {
       setDeleting(null);
     }
@@ -42,7 +43,7 @@ const CamerasPage = () => {
 
   const filtered = cameras.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.location.toLowerCase().includes(search.toLowerCase()) ||
+    (c.location ?? "").toLowerCase().includes(search.toLowerCase()) ||
     c.cameraId.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -108,7 +109,7 @@ const CamerasPage = () => {
                   <td>
                     <div style={{ fontWeight: 600, color: "var(--ink)" }}>{cam.name}</div>
                   </td>
-                  <td style={{ color: "var(--ink-2)" }}>{cam.location}</td>
+                  <td style={{ color: "var(--ink-2)" }}>{cam.location ?? "위치 미지정"}</td>
                   <td><span className="chip mono" style={{ fontSize: 11 }}>{cam.cameraId}</span></td>
                   <td>
                     <span className={`chip dot ${statusColors[cam.status] || ""}`}>
