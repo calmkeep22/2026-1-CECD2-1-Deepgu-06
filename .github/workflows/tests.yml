@@ -1,0 +1,112 @@
+name: Component Test Setup
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/tests.yml"
+      - "BE/**"
+      - "MEDIA/**"
+      - "tests/**"
+      - "compose.test.yml"
+      - "test-infra/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend test environment
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: deepgu_test
+          MYSQL_USER: deepgu_test
+          MYSQL_PASSWORD: deepgu_test_password
+          MYSQL_ROOT_PASSWORD: deepgu_test_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pdeepgu_test_root_password --silent"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+    defaults:
+      run:
+        working-directory: BE
+    env:
+      APP_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: deepgu_test
+      DB_USER: deepgu_test
+      DB_PASSWORD: deepgu_test_password
+      MEDIA_SERVER_BASE_URL: http://127.0.0.1:19000
+      MEDIA_SERVER_TIMEOUT_SECONDS: 3
+      APP_BASE_URL: http://127.0.0.1:18000
+      CALLBACK_SECRET: ci-test-callback-secret
+      JWT_SECRET_KEY: ci-test-jwt-secret
+      AWS_REGION: ap-northeast-2
+      S3_BUCKET_NAME: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: BE/requirements-test.txt
+      - name: Install test dependencies
+        run: pip install -r requirements-test.txt
+      - name: Apply migrations
+        run: alembic upgrade head
+      - name: Validate Python modules
+        run: python -m compileall -q app alembic
+      - name: Run backend tests when present
+        shell: bash
+        run: |
+          if find tests -type f -name 'test_*.py' -print -quit | grep -q .; then
+            pytest
+          else
+            echo "No backend test files yet; test infrastructure is ready."
+          fi
+
+  media:
+    name: Media test environment
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: MEDIA
+    env:
+      APP_ENV: test
+      CALLBACK_SECRET: ci-test-callback-secret
+      MEDIAMTX_API_URL: http://127.0.0.1:19997
+      MEDIAMTX_RTMP_APP: live
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: MEDIA/requirements-test.txt
+      - name: Install test dependencies
+        run: pip install -r requirements-test.txt
+      - name: Validate Python modules
+        run: python -m compileall -q app
+      - name: Run media tests when present
+        shell: bash
+        run: |
+          if find tests -type f -name 'test_*.py' -print -quit | grep -q .; then
+            pytest
+          else
+            echo "No media test files yet; test infrastructure is ready."
+          fi
+
+  compose:
+    name: Validate local integration stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose configuration
+        run: docker compose -f compose.test.yml config --quiet

@@ -210,6 +210,46 @@ alembic check
 
 컬럼명 변경이 `DROP COLUMN` + `ADD COLUMN`으로 생성되거나, 기존 데이터가 있는 테이블에 `NOT NULL` 컬럼이 바로 추가될 수 있으므로 autogenerate 결과를 그대로 적용하면 안 됩니다. 데이터 삭제가 포함된 downgrade는 백업 없이 운영 DB에서 실행하지 마세요.
 
+#### 로컬 테스트 환경
+
+AWS 없이 MySQL, MediaMTX, 미디어 서버와 백엔드를 격리된 로컬 환경에서 실행할 수 있습니다.
+
+```bash
+docker compose -f compose.test.yml up --build -d
+docker compose -f compose.test.yml ps
+```
+
+로컬 포트는 운영·개발 환경과 충돌하지 않도록 별도로 사용합니다.
+
+- 백엔드: `http://localhost:18000`
+- 미디어 서버: `http://localhost:19000`
+- MySQL: `localhost:3307`
+- MediaMTX RTMP: `localhost:11935`
+- MediaMTX HLS: `http://localhost:18888`
+- MediaMTX API: `http://localhost:19997`
+
+컴포넌트별 테스트 의존성과 pytest 설정은 `BE/requirements-test.txt`, `MEDIA/requirements-test.txt`에 분리되어 있습니다. 현재 설정에는 실제 테스트 케이스가 포함되지 않으며, 각 컴포넌트의 `tests` 디렉토리에 `test_*.py` 파일을 추가하면 로컬과 CI에서 자동 수집됩니다.
+
+```bash
+cd BE
+python -m venv venv
+./venv/Scripts/python -m pip install -r requirements-test.txt
+./venv/Scripts/python -m pytest
+
+cd ../MEDIA
+python -m venv venv
+./venv/Scripts/python -m pip install -r requirements-test.txt
+./venv/Scripts/python -m pytest
+```
+
+macOS와 Linux에서는 `venv/Scripts/python` 대신 `venv/bin/python`을 사용합니다.
+
+테스트 스택 종료 시 임시 MySQL 데이터도 함께 제거합니다.
+
+```bash
+docker compose -f compose.test.yml down -v
+```
+
 ### AI 파이프라인
 
 ```bash
