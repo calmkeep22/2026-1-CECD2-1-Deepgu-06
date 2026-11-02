@@ -1,0 +1,95 @@
+name: deepgu-test
+
+services:
+  mysql-test:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: deepgu_test
+      MYSQL_USER: deepgu_test
+      MYSQL_PASSWORD: deepgu_test_password
+      MYSQL_ROOT_PASSWORD: deepgu_test_root_password
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    tmpfs:
+      - /var/lib/mysql
+    networks:
+      - deepgu-test
+
+  mediamtx-test:
+    image: bluenviron/mediamtx:1.21.3
+    volumes:
+      - ./test-infra/mediamtx.yml:/mediamtx.yml:ro
+    ports:
+      - "11935:1935"
+      - "18888:8888"
+      - "19997:9997"
+    networks:
+      - deepgu-test
+
+  media-test:
+    build:
+      context: ./MEDIA
+    environment:
+      APP_ENV: test
+      APP_HOST: 0.0.0.0
+      APP_PORT: 9000
+      INSTANCE_ID: media-test-1
+      CALLBACK_SECRET: local-test-callback-secret
+      MEDIAMTX_API_URL: http://mediamtx-test:9997
+      MEDIAMTX_RTMP_APP: live
+      RTMP_HOST: mediamtx-test
+      RTMP_PORT: 1935
+      RTMP_APP: live
+    ports:
+      - "19000:9000"
+    depends_on:
+      - mediamtx-test
+    networks:
+      - deepgu-test
+
+  backend-test:
+    build:
+      context: ./BE
+    command:
+      - sh
+      - -c
+      - alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      APP_ENV: test
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      DB_HOST: mysql-test
+      DB_PORT: 3306
+      DB_NAME: deepgu_test
+      DB_USER: deepgu_test
+      DB_PASSWORD: deepgu_test_password
+      MEDIA_SERVER_BASE_URL: http://media-test:9000
+      MEDIA_SERVER_TIMEOUT_SECONDS: 3
+      APP_BASE_URL: http://backend-test:8000
+      CALLBACK_SECRET: local-test-callback-secret
+      JWT_SECRET_KEY: local-test-jwt-secret
+      AWS_REGION: ap-northeast-2
+      S3_BUCKET_NAME: ""
+    ports:
+      - "18000:8000"
+    depends_on:
+      mysql-test:
+        condition: service_healthy
+      media-test:
+        condition: service_started
+    networks:
+      - deepgu-test
+
+networks:
+  deepgu-test:
+    name: deepgu-test

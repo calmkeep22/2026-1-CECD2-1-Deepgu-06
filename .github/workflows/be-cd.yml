@@ -58,6 +58,8 @@ jobs:
             -e DB_NAME=dummy \
             -e DB_USER=dummy \
             -e DB_PASSWORD=dummy \
+            -e JWT_SECRET_KEY=ci-test-jwt-secret \
+            -e CALLBACK_SECRET=ci-test-callback-secret \
             backend-server:ci-${{ github.sha }}
 
           echo "=== container status ==="

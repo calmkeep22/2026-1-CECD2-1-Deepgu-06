@@ -5,6 +5,10 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # 환경
 .env
@@ -51,6 +55,7 @@ CLAUDE.md
 *.txt
 !requirements.txt
 !**/requirements.txt
+!**/requirements-test.txt
 !robots.txt
 !**/robots.txt
 
