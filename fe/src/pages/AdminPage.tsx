@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUsers, approveUser, deleteUser, assignCamera } from "../api/user";
 import type { User } from "../api/user";
+import { getApiErrorMessage } from "../api/client";
 import { getCameras, createCamera, deleteCamera } from "../api/camera";
 import type { Camera } from "../api/camera";
 import styles from "./AdminPage.module.css";
@@ -47,7 +48,7 @@ const AdminPage = () => {
       setNewCamera({ cameraId: "", name: "", location: "", streamKey: "", description: "" });
       setMsg("카메라 등록 완료");
     } catch (err: any) {
-      setMsg(err.response?.data?.detail || "카메라 등록 실패");
+      setMsg(getApiErrorMessage(err, "카메라 등록 실패"));
     }
   };
 

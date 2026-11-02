@@ -21,4 +21,14 @@ client.interceptors.response.use(
   }
 );
 
+export function getApiErrorCode(err: any): string | undefined {
+  return err.response?.data?.error?.code;
+}
+
+export function getApiErrorMessage(err: any, fallback: string): string {
+  const data = err.response?.data;
+  const message = data?.error?.message ?? data?.detail;
+  return typeof message === "string" ? message : fallback;
+}
+
 export default client;

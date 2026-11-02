@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { login } from "../api/auth";
+import { getApiErrorCode, getApiErrorMessage } from "../api/client";
 
 const LoginPage = () => {
   const { setToken } = useAuth();
@@ -20,10 +21,10 @@ const LoginPage = () => {
       setToken(token);
       navigate("/stream");
     } catch (err: any) {
-      const code = err.response?.data?.code;
+      const code = getApiErrorCode(err);
       if (code === "PENDING_APPROVAL") setError("관리자 승인 대기 중입니다.");
       else if (code === "INVALID_CREDENTIALS") setError("이메일 또는 비밀번호가 올바르지 않습니다.");
-      else setError(err.response?.data?.detail || "로그인에 실패했습니다.");
+      else setError(getApiErrorMessage(err, "로그인에 실패했습니다."));
     } finally {
       setLoading(false);
     }

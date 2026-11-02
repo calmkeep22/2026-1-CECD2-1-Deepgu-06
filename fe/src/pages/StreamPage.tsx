@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { getApiErrorMessage } from "../api/client";
 import { getCameras, startStream, stopStream, getStreamStatus } from "../api/camera";
 import type { Camera, StreamStatus } from "../api/camera";
 import VideoPlayer from "../components/VideoPlayer";
@@ -44,7 +45,7 @@ const StreamPage = () => {
       await startStream(selected.cameraId);
       await loadStatus(selected);
     } catch (err: any) {
-      alert(err.response?.data?.detail || "스트림 시작 실패");
+      alert(getApiErrorMessage(err, "스트림 시작 실패"));
     } finally {
       setActionLoading(false);
     }
@@ -57,7 +58,7 @@ const StreamPage = () => {
       await stopStream(selected.cameraId);
       await loadStatus(selected);
     } catch (err: any) {
-      alert(err.response?.data?.detail || "스트림 종료 실패");
+      alert(getApiErrorMessage(err, "스트림 종료 실패"));
     } finally {
       setActionLoading(false);
     }

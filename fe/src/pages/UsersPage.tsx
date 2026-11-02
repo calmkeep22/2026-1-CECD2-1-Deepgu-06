@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getUsers, approveUser, deleteUser, assignCamera, unassignCamera, getUserCameras } from "../api/user";
+import { getApiErrorMessage } from "../api/client";
 import { getCameras } from "../api/camera";
 import type { User } from "../api/user";
 import type { Camera } from "../api/camera";
@@ -33,7 +34,7 @@ const UsersPage = () => {
   const handleApprove = async (user: User) => {
     setActionLoading(true);
     try { await approveUser(user.id); await load(); }
-    catch (e: any) { alert(e.response?.data?.detail || "승인 실패"); }
+    catch (e: any) { alert(getApiErrorMessage(e, "승인 실패")); }
     finally { setActionLoading(false); }
   };
 
@@ -41,7 +42,7 @@ const UsersPage = () => {
     if (!confirm(`"${user.name}" 사용자를 삭제하시겠습니까?`)) return;
     setActionLoading(true);
     try { await deleteUser(user.id); setSelected(null); await load(); }
-    catch (e: any) { alert(e.response?.data?.detail || "삭제 실패"); }
+    catch (e: any) { alert(getApiErrorMessage(e, "삭제 실패")); }
     finally { setActionLoading(false); }
   };
 
@@ -64,7 +65,7 @@ const UsersPage = () => {
       await assignCamera(camId, selected.id);
       await loadAssignedCameras(selected);
     }
-    catch (e: any) { alert(e.response?.data?.message || e.response?.data?.detail || "할당 실패"); }
+    catch (e: any) { alert(getApiErrorMessage(e, "할당 실패")); }
     finally { setAssigningCam(""); }
   };
 
@@ -74,7 +75,7 @@ const UsersPage = () => {
       await unassignCamera(camId, selected.id);
       await loadAssignedCameras(selected);
     }
-    catch (e: any) { alert(e.response?.data?.message || "해제 실패"); }
+    catch (e: any) { alert(getApiErrorMessage(e, "해제 실패")); }
   };
 
   const filtered = users.filter(u =>

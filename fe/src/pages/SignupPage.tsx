@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { register } from "../api/auth";
+import { getApiErrorCode, getApiErrorMessage } from "../api/client";
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -22,9 +23,9 @@ const SignupPage = () => {
       await register({ email: form.email, password: form.password, name: form.name });
       setDone(true);
     } catch (err: any) {
-      const code = err.response?.data?.code;
+      const code = getApiErrorCode(err);
       if (code === "EMAIL_ALREADY_EXISTS") setError("이미 사용 중인 이메일입니다.");
-      else setError(err.response?.data?.detail || "오류가 발생했습니다.");
+      else setError(getApiErrorMessage(err, "오류가 발생했습니다."));
     } finally {
       setLoading(false);
     }

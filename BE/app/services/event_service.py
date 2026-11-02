@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.clients import s3_client
 from app.core.enums import EventStatus
+from app.core.exceptions import AppException
 from app.models.event import Event
 from app.schemas.event import EventCreateRequest
 
@@ -105,7 +106,7 @@ class EventService:
     @staticmethod
     def update_status(db: Session, event: Event, status: str) -> Event:
         if status not in EventService.ALLOWED_STATUSES:
-            raise ValueError("INVALID_STATUS")
+            raise AppException(status_code=400, code="INVALID_STATUS", message="유효하지 않은 상태값입니다.")
         event.status = status
         db.commit()
         db.refresh(event)

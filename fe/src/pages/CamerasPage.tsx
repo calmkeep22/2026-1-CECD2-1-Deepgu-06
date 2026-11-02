@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "../api/client";
 import { getCameras, deleteCamera } from "../api/camera";
 import type { Camera } from "../api/camera";
 import Layout from "../components/Layout";
@@ -34,7 +35,7 @@ const CamerasPage = () => {
       await deleteCamera(cam.cameraId);
       load();
     } catch (err: any) {
-      alert(err.response?.data?.detail || "삭제 실패");
+      alert(getApiErrorMessage(err, "삭제 실패"));
     } finally {
       setDeleting(null);
     }
