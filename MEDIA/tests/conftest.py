@@ -1,6 +1,11 @@
+import os
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+
+os.environ.setdefault("CALLBACK_SECRET", "test-callback-secret")
 
 from app.api.health import router as health_router
 from app.api.stream import router as stream_router

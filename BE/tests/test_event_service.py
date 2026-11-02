@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 
+from app.core.exceptions import AppException
 from app.models.event import Event
 from app.schemas.event import EventCreateRequest
 from app.services import event_service
@@ -48,9 +49,10 @@ def test_create_event_payload_uploads_video_and_thumbnails(db, monkeypatch):
 def test_update_event_status_rejects_unknown_status(db):
     event = Event(status="UNREVIEWED")
 
-    with pytest.raises(ValueError, match="INVALID_STATUS"):
+    with pytest.raises(AppException) as exc_info:
         EventService.update_status(db, event, "UNKNOWN")
 
+    assert exc_info.value.code == "INVALID_STATUS"
     db.commit.assert_not_called()
 
 
