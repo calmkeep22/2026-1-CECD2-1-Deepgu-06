@@ -47,7 +47,11 @@ jobs:
         run: |
           set -euxo pipefail
 
-          docker run -d --name media-ci-test -p 9000:9000 media-server:ci-${{ github.sha }}
+          docker run -d \
+            --name media-ci-test \
+            -p 9000:9000 \
+            -e CALLBACK_SECRET=ci-test-callback-secret \
+            media-server:ci-${{ github.sha }}
 
           echo "=== container status ==="
           docker ps -a

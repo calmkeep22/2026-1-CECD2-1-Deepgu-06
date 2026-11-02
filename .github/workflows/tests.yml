@@ -67,7 +67,7 @@ jobs:
         shell: bash
         run: |
           if find tests -type f -name 'test_*.py' -print -quit | grep -q .; then
-            pytest
+            python -m pytest
           else
             echo "No backend test files yet; test infrastructure is ready."
           fi
@@ -98,7 +98,7 @@ jobs:
         shell: bash
         run: |
           if find tests -type f -name 'test_*.py' -print -quit | grep -q .; then
-            pytest
+            python -m pytest
           else
             echo "No media test files yet; test infrastructure is ready."
           fi
