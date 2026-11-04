@@ -2,8 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { getApiErrorMessage } from "../api/client";
 import { getCameras, startStream, stopStream, getStreamStatus } from "../api/camera";
 import type { Camera, StreamStatus } from "../api/camera";
-import VideoPlayer from "../components/VideoPlayer";
-import WebRTCPlayer from "../components/WebRTCPlayer";
+import LiveVideoPlayer from "../components/LiveVideoPlayer";
 import EventNotification from "../components/EventNotification";
 import Layout from "../components/Layout";
 
@@ -67,11 +66,6 @@ const StreamPage = () => {
   const camStatus = streamStatus?.camera_status || selected?.status || "STOPPED";
   const hlsUrl = camStatus === "RUNNING" ? (streamStatus?.current_session?.hls_url || null) : null;
   const isRunning = camStatus === "RUNNING" || camStatus === "STARTING";
-
-  const streamName = hlsUrl?.match(/\/live\/([^/]+)\//)?.[1] ?? "";
-  const whepUrl = camStatus === "RUNNING" && WEBRTC_BASE_URL && streamName
-    ? `${WEBRTC_BASE_URL}/live/${streamName}/whep`
-    : null;
 
   const filteredCameras = cameras.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -153,13 +147,13 @@ const StreamPage = () => {
                     <span style={{ color: "#fff", fontSize: 11, background: "rgba(0,0,0,.4)", padding: "2px 6px", borderRadius: 3 }}>{selected.name}</span>
                   </div>
                 )}
-                {whepUrl
+                {hlsUrl
                   ? (
-                    <WebRTCPlayer whepUrl={whepUrl} />
-                  )
-                  : hlsUrl
-                  ? (
-                    <VideoPlayer hlsUrl={hlsUrl} mediaServerUrl={MEDIA_SERVER_URL} />
+                    <LiveVideoPlayer
+                      hlsUrl={hlsUrl}
+                      mediaServerUrl={MEDIA_SERVER_URL}
+                      webrtcBaseUrl={WEBRTC_BASE_URL}
+                    />
                   )
                   : (
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: "rgba(255,255,255,.5)" }}>

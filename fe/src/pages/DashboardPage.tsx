@@ -3,10 +3,11 @@ import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage } from "../api/client";
 import { getCameras, startStream, stopStream, getStreamStatus } from "../api/camera";
 import type { Camera, StreamStatus } from "../api/camera";
-import VideoPlayer from "../components/VideoPlayer";
+import LiveVideoPlayer from "../components/LiveVideoPlayer";
 import styles from "./DashboardPage.module.css";
 
 const MEDIA_SERVER_URL = import.meta.env.VITE_MEDIA_SERVER_URL || "";
+const WEBRTC_BASE_URL = import.meta.env.VITE_WEBRTC_BASE_URL || "";
 
 const statusLabel: Record<string, { label: string; color: string }> = {
   RUNNING:  { label: "스트리밍 중", color: "#10b981" },
@@ -128,7 +129,13 @@ const DashboardPage = () => {
 
             <div className={styles.videoWrapper}>
               {hlsUrl
-                ? <VideoPlayer hlsUrl={hlsUrl} mediaServerUrl={MEDIA_SERVER_URL} />
+                ? (
+                  <LiveVideoPlayer
+                    hlsUrl={hlsUrl}
+                    mediaServerUrl={MEDIA_SERVER_URL}
+                    webrtcBaseUrl={WEBRTC_BASE_URL}
+                  />
+                )
                 : <div className={styles.noStream}>{camStatus === "STARTING" ? "스트림 시작 중..." : "스트림이 없습니다"}</div>
               }
             </div>
