@@ -65,13 +65,13 @@ $exitCode = 1
 try {
     Push-Location $repositoryRoot
 
-    docker compose -f $composeFile down -v --remove-orphans
+    docker compose -f $composeFile --profile streaming down -v --remove-orphans
     docker compose -f $composeFile up --build -d mysql-test mediamtx-test media-test backend-test
 
     Wait-HttpReady -Url "http://127.0.0.1:18000/ready"
     Wait-HttpReady -Url "http://127.0.0.1:19000/health"
 
-    & $pythonPath -m pytest $testFile -v -s
+    & $pythonPath -m pytest $testFile -v -s -p no:cacheprovider
     $exitCode = $LASTEXITCODE
 
     if ($exitCode -ne 0) {
@@ -81,7 +81,7 @@ try {
 }
 finally {
     if (-not $KeepStack) {
-        docker compose -f $composeFile down -v --remove-orphans
+        docker compose -f $composeFile --profile streaming down -v --remove-orphans
     }
     Pop-Location
 }

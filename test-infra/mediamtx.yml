@@ -1,11 +1,32 @@
 api: yes
 apiAddress: :9997
 
+# This file is used only by the isolated local test network. MediaMTX grants
+# API access to localhost by default, but media-test runs in another container.
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+        path:
+      - action: read
+        path:
+      - action: playback
+        path:
+      - action: api
+
 rtmp: yes
 rtmpAddress: :1935
 
 hls: yes
 hlsAddress: :8888
+
+webrtc: yes
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
+webrtcAdditionalHosts:
+  - 127.0.0.1
 
 paths:
   all_others:

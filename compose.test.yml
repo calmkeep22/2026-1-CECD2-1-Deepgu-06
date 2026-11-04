@@ -32,6 +32,8 @@ services:
     ports:
       - "11935:1935"
       - "18888:8888"
+      - "8889:8889"
+      - "8189:8189/udp"
       - "19997:9997"
     networks:
       - deepgu-test
@@ -79,6 +81,12 @@ services:
       - veryfast
       - -tune
       - zerolatency
+      - -g
+      - "60"
+      - -keyint_min
+      - "60"
+      - -sc_threshold
+      - "0"
       - -c:a
       - aac
       - -f

@@ -33,6 +33,8 @@ storage/
 # 로그 및 결과 파일
 *.csv
 *.log
+.tmp-load-smoke/
+.tmp-webrtc-smoke/
 
 # 영상 파일
 *.mp4

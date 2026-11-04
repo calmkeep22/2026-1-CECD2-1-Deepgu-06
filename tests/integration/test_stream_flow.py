@@ -3,7 +3,7 @@ import hashlib
 import os
 import subprocess
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter, sleep
 
@@ -64,6 +64,7 @@ def _start_video_publisher() -> None:
             "streaming",
             "up",
             "-d",
+            "--force-recreate",
             "stream-publisher",
         ],
         cwd=REPOSITORY_ROOT,
@@ -71,12 +72,19 @@ def _start_video_publisher() -> None:
     )
 
 
-def _wait_for_status(client, url: str, status_reader, expected: str, timeout: float) -> float:
+def _wait_for_status(
+    client,
+    url: str,
+    status_reader,
+    expected: str,
+    timeout: float,
+    headers: dict[str, str] | None = None,
+) -> float:
     started = perf_counter()
     last_status = None
 
     while perf_counter() - started < timeout:
-        response = client.get(url)
+        response = client.get(url, headers=headers)
         if response.status_code == 200:
             last_status = status_reader(response.json())
             if last_status == expected:
@@ -94,7 +102,14 @@ def _wait_for_hls_playlist(client, stream_key: str, timeout: float) -> float:
     started = perf_counter()
 
     while perf_counter() - started < timeout:
-        response = client.get(playlist_url)
+        try:
+            response = client.get(
+                playlist_url,
+                follow_redirects=True,
+                timeout=5.0,
+            )
+        except httpx.TimeoutException:
+            continue
         if response.status_code == 200 and response.text.startswith("#EXTM3U"):
             return perf_counter() - started
         sleep(0.5)
@@ -110,6 +125,7 @@ def test_backend_controls_media_server_stream_lifecycle():
     stream_key = STREAM_KEY
     token = None
     headers = None
+    now = datetime.now(UTC).replace(tzinfo=None)
 
     with _db_connection() as connection:
         with connection.cursor() as cursor:
@@ -119,7 +135,7 @@ def test_backend_controls_media_server_stream_lifecycle():
                     (email, password_hash, name, role, status, created_at, updated_at)
                 VALUES (%s, %s, %s, 'ADMIN', 'ACTIVE', %s, %s)
                 """,
-                (email, _password_hash(password), "Integration Admin", datetime.utcnow(), datetime.utcnow()),
+                (email, _password_hash(password), "Integration Admin", now, now),
             )
             user_id = cursor.lastrowid
 
@@ -172,6 +188,7 @@ def test_backend_controls_media_server_stream_lifecycle():
                 lambda body: body["data"]["camera_status"],
                 "RUNNING",
                 RUNNING_MAX_SECONDS,
+                headers,
             )
             hls_ready_seconds = _wait_for_hls_playlist(
                 client,
@@ -195,6 +212,7 @@ def test_backend_controls_media_server_stream_lifecycle():
                 lambda body: body["data"]["camera_status"],
                 "STOPPED",
                 5.0,
+                headers,
             )
             _wait_for_status(
                 client,
