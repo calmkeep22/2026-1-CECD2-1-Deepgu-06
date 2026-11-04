@@ -32,6 +32,8 @@ services:
     ports:
       - "11935:1935"
       - "18888:8888"
+      - "8889:8889"
+      - "8189:8189/udp"
       - "19997:9997"
     networks:
       - deepgu-test
@@ -52,6 +54,49 @@ services:
       RTMP_APP: live
     ports:
       - "19000:9000"
+    depends_on:
+      - mediamtx-test
+    networks:
+      - deepgu-test
+
+  stream-publisher:
+    profiles:
+      - streaming
+    build:
+      context: ./MEDIA
+    entrypoint:
+      - ffmpeg
+    command:
+      - -hide_banner
+      - -loglevel
+      - warning
+      - -re
+      - -stream_loop
+      - "-1"
+      - -i
+      - /test-video/input.mp4
+      - -c:v
+      - libx264
+      - -preset
+      - veryfast
+      - -tune
+      - zerolatency
+      - -g
+      - "60"
+      - -keyint_min
+      - "60"
+      - -sc_threshold
+      - "0"
+      - -c:a
+      - aac
+      - -f
+      - flv
+      - rtmp://mediamtx-test:1935/live/${TEST_STREAM_KEY:-integration-stream}
+    volumes:
+      - type: bind
+        source: ${TEST_VIDEO_PATH:-./tests/fixtures/sample.mp4}
+        target: /test-video/input.mp4
+        read_only: true
     depends_on:
       - mediamtx-test
     networks:

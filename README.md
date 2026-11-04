@@ -212,7 +212,21 @@ alembic check
 
 #### 로컬 테스트 환경
 
-AWS 없이 MySQL, MediaMTX, 미디어 서버와 백엔드를 격리된 로컬 환경에서 실행할 수 있습니다.
+AWS 없이 MySQL, MediaMTX, 미디어 서버와 백엔드를 격리된 로컬 환경에서 실행할 수 있습니다. 로컬 MP4를 실제 RTMP로 송출하는 통합 테스트는 다음 명령 하나로 실행합니다.
+
+```powershell
+.\scripts\run-stream-integration.ps1 -VideoPath "C:\videos\sample.mp4"
+```
+
+스크립트는 테스트 스택 기동, readiness 대기, FFmpeg publisher 실행, 백엔드-미디어 callback과 DB 상태 검증, HLS playlist 확인 및 환경 정리까지 수행합니다. 시작 API, Media·Backend의 `RUNNING` 전환, HLS 준비, 중지 API 지연시간도 함께 출력합니다. 실패한 컨테이너를 직접 확인하려면 `-KeepStack` 옵션을 사용합니다.
+
+```powershell
+.\scripts\run-stream-integration.ps1 `
+  -VideoPath "C:\videos\sample.mp4" `
+  -KeepStack
+```
+
+스택만 수동으로 실행하려면 다음 명령을 사용합니다.
 
 ```bash
 docker compose -f compose.test.yml up --build -d
@@ -228,7 +242,7 @@ docker compose -f compose.test.yml ps
 - MediaMTX HLS: `http://localhost:18888`
 - MediaMTX API: `http://localhost:19997`
 
-컴포넌트별 테스트 의존성과 pytest 설정은 `BE/requirements-test.txt`, `MEDIA/requirements-test.txt`에 분리되어 있습니다. 현재 설정에는 실제 테스트 케이스가 포함되지 않으며, 각 컴포넌트의 `tests` 디렉토리에 `test_*.py` 파일을 추가하면 로컬과 CI에서 자동 수집됩니다.
+컴포넌트별 테스트 의존성과 pytest 설정은 `BE/requirements-test.txt`, `MEDIA/requirements-test.txt`에 분리되어 있습니다. 테스트 파일은 각 컴포넌트의 `tests` 디렉토리에서 로컬과 CI가 자동 수집합니다.
 
 ```bash
 cd BE
